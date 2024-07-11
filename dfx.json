@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "test_u8_upgrade_backend": {
+      "candid": "src/test_u8_upgrade_backend/test_u8_upgrade_backend.did",
+      "package": "test_u8_upgrade_backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
