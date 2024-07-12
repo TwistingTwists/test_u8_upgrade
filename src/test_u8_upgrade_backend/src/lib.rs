@@ -11,7 +11,6 @@ use ic_stable_structures::{
     storable::Bound,
     DefaultMemoryImpl, Storable,
 };
-
 pub mod post_upgrade;
 pub mod pre_upgrade;
 thread_local! {
@@ -48,9 +47,9 @@ impl From<SlotDetailsV1> for SlotDetailsV2 {
 #[derive(candid::Deserialize, CandidType, serde::Serialize)]
 pub struct CanisterData {
     pub store_id: StoreId,
-    // pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
-    #[serde(alias = "test_container_field")]
-    pub test_container_field_1: BTreeMap<u64, SlotDetailsV2>,
+    pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
+    // #[serde(alias = "test_container_field")]
+    // pub test_container_field_1: BTreeMap<u64, SlotDetailsV2>,
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub store_map: ic_stable_structures::btreemap::BTreeMap<StoreId, SlotDetailsV1, Memory>,
 }
@@ -63,14 +62,25 @@ impl Default for CanisterData {
     fn default() -> Self {
         Self {
             store_id: 56,
-            test_container_field_1: default_vals(),
+            test_container_field: default_vals_v1(),
+            // test_container_field_1: default_vals_v2(),
             // test_container_field_1: BTreeMap::new(),
             // store_map: _default_slot_details_map(),
         }
     }
 }
+pub fn default_vals_v1() -> BTreeMap<u64, SlotDetailsV1> {
+    let mut slot_map: BTreeMap<u64, SlotDetailsV1> = BTreeMap::new();
 
-pub fn default_vals() -> BTreeMap<u64, SlotDetailsV2> {
+    // Adding some sample values
+    slot_map.insert(1, SlotDetailsV1 { active_room_id: 5 });
+    slot_map.insert(3, SlotDetailsV1 { active_room_id: 2 });
+    slot_map.insert(7, SlotDetailsV1 { active_room_id: 8 });
+    slot_map.insert(255, SlotDetailsV1 { active_room_id: 1 });
+    slot_map
+}
+
+pub fn default_vals_v2() -> BTreeMap<u64, SlotDetailsV2> {
     let mut slot_map: BTreeMap<u64, SlotDetailsV2> = BTreeMap::new();
 
     // Adding some sample values
@@ -109,23 +119,20 @@ fn get_store_id() -> StoreId {
     })
 }
 
-#[ic_cdk::query]
-fn get_active_room_id() -> BTreeMap<u64, SlotDetailsV2> {
+#[ic_cdk_macros::query]
+fn get_active_room_id_v1() -> BTreeMap<u64, SlotDetailsV1> {
     CANISTER_DATA.with(|canister_data_ref_cell| {
         let data = canister_data_ref_cell.borrow_mut();
-        data.test_container_field_1.clone()
+        data.test_container_field.clone()
     })
 }
 
-// #[pre_upgrade]
-// fn pre_upgrade() {
-//     CANISTER_DATA.with(|canister_data| storage::stable_save((canister_data,)).unwrap());
-// }
-
-// #[post_upgrade]
-// fn post_upgrade() {
-//     let (old_canister_data,): (CanisterData,) = storage::stable_restore().unwrap();
-//     CANISTER_DATA.with(|canister_data| *canister_data.borrow_mut() = old_canister_data);
+// #[ic_cdk_macros::query]
+// fn get_active_room_id_v2() -> BTreeMap<u64, SlotDetailsV2> {
+//     CANISTER_DATA.with(|canister_data_ref_cell| {
+//         let data = canister_data_ref_cell.borrow_mut();
+//         data.test_container_field_1.clone()
+//     })
 // }
 
 impl Storable for SlotDetailsV1 {
