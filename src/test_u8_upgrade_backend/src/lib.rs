@@ -12,6 +12,9 @@ use ic_stable_structures::{
     DefaultMemoryImpl, Storable,
 };
 
+pub mod post_upgrade;
+pub mod pre_upgrade;
+
 thread_local! {
     pub static CANISTER_DATA: RefCell<CanisterData> = RefCell::default();
     pub static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
@@ -51,13 +54,19 @@ impl Default for CanisterData {
     }
 }
 
+pub fn init_memory_manager() {
+    MEMORY_MANAGER.with(|m| {
+        *m.borrow_mut() = MemoryManager::init_with_bucket_size(DefaultMemoryImpl::default(), 1);
+    })
+}
+
 pub fn get_slot_details_memory() -> Memory {
     MEMORY_MANAGER.with(|m| m.borrow_mut().get(SLOT_DETAILS_MEMORY))
 }
 
-// pub fn get_upgrades_memory() -> Memory {
-//     MEMORY_MANAGER.with(|m| m.borrow_mut().get(UPGRADES))
-// }
+pub fn get_upgrades_memory() -> Memory {
+    MEMORY_MANAGER.with(|m| m.borrow_mut().get(UPGRADES))
+}
 
 #[ic_cdk::query]
 fn greet(name: String) -> String {
@@ -72,16 +81,16 @@ fn get_store_id() -> StoreId {
     })
 }
 
-#[pre_upgrade]
-fn pre_upgrade() {
-    CANISTER_DATA.with(|canister_data| storage::stable_save((canister_data,)).unwrap());
-}
+// #[pre_upgrade]
+// fn pre_upgrade() {
+//     CANISTER_DATA.with(|canister_data| storage::stable_save((canister_data,)).unwrap());
+// }
 
-#[post_upgrade]
-fn post_upgrade() {
-    let (old_canister_data,): (CanisterData,) = storage::stable_restore().unwrap();
-    CANISTER_DATA.with(|canister_data| *canister_data.borrow_mut() = old_canister_data);
-}
+// #[post_upgrade]
+// fn post_upgrade() {
+//     let (old_canister_data,): (CanisterData,) = storage::stable_restore().unwrap();
+//     CANISTER_DATA.with(|canister_data| *canister_data.borrow_mut() = old_canister_data);
+// }
 
 impl Storable for SlotDetailsV1 {
     fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
