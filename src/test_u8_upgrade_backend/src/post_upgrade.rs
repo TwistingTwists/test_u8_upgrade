@@ -24,29 +24,30 @@ fn restore_data_from_stable_memory() {
     let canister_data =
         de::from_reader(&*canister_data_bytes).expect("Failed to deserialize heap data");
 
-    let new_canister_data = convert_canister_data(&canister_data);
+    // let new_canister_data = convert_canister_data(&canister_data);
 
     CANISTER_DATA.with(|canister_data_ref_cell| {
-        *canister_data_ref_cell.borrow_mut() = new_canister_data;
+        *canister_data_ref_cell.borrow_mut() = canister_data;
+        // *canister_data_ref_cell.borrow_mut() = new_canister_data;
     });
 }
 
-fn convert_canister_data(old_data: &CanisterData) -> CanisterData {
-    let new_test_container_field: BTreeMap<u64, SlotDetailsV1> = old_data
-        .test_container_field
-        .iter()
-        .map(|(&key, value)| {
-            (
-                key,
-                SlotDetailsV1 {
-                    active_room_id: value.active_room_id as u64,
-                },
-            )
-        })
-        .collect();
+// fn convert_canister_data(old_data: &CanisterData) -> CanisterData {
+//     let new_test_container_field: BTreeMap<u64, SlotDetailsV1> = old_data
+//         .test_container_field
+//         .iter()
+//         .map(|(&key, value)| {
+//             (
+//                 key,
+//                 SlotDetailsV1 {
+//                     active_room_id: value.active_room_id as u64,
+//                 },
+//             )
+//         })
+//         .collect();
 
-    CanisterData {
-        store_id: old_data.store_id,
-        test_container_field: new_test_container_field,
-    }
-}
+//     CanisterData {
+//         store_id: old_data.store_id,
+//         test_container_field: new_test_container_field,
+//     }
+// }

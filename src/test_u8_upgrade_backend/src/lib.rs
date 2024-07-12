@@ -14,7 +14,6 @@ use ic_stable_structures::{
 
 pub mod post_upgrade;
 pub mod pre_upgrade;
-
 thread_local! {
     pub static CANISTER_DATA: RefCell<CanisterData> = RefCell::default();
     pub static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
@@ -49,9 +48,9 @@ impl From<SlotDetailsV1> for SlotDetailsV2 {
 #[derive(candid::Deserialize, CandidType, serde::Serialize)]
 pub struct CanisterData {
     pub store_id: StoreId,
-    pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
-    // #[serde(alias = "test_container_field")]
-    // pub test_container_field_1: BTreeMap<u64, SlotDetailsV2>,
+    // pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
+    #[serde(alias = "test_container_field")]
+    pub test_container_field_1: BTreeMap<u64, SlotDetailsV2>,
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub store_map: ic_stable_structures::btreemap::BTreeMap<StoreId, SlotDetailsV1, Memory>,
 }
@@ -64,25 +63,24 @@ impl Default for CanisterData {
     fn default() -> Self {
         Self {
             store_id: 56,
-            test_container_field: default_vals(),
+            test_container_field_1: default_vals(),
             // test_container_field_1: BTreeMap::new(),
             // store_map: _default_slot_details_map(),
         }
     }
 }
 
-pub fn default_vals() -> BTreeMap<u64, SlotDetailsV1> {
-    let mut slot_map: BTreeMap<u64, SlotDetailsV1> = BTreeMap::new();
+pub fn default_vals() -> BTreeMap<u64, SlotDetailsV2> {
+    let mut slot_map: BTreeMap<u64, SlotDetailsV2> = BTreeMap::new();
 
     // Adding some sample values
-    slot_map.insert(1, SlotDetailsV1 { active_room_id: 5 });
-    slot_map.insert(3, SlotDetailsV1 { active_room_id: 2 });
-    slot_map.insert(7, SlotDetailsV1 { active_room_id: 8 });
-    slot_map.insert(255, SlotDetailsV1 { active_room_id: 1 });
+    slot_map.insert(1, SlotDetailsV2 { active_room_id: 5 });
+    slot_map.insert(3, SlotDetailsV2 { active_room_id: 2 });
+    slot_map.insert(7, SlotDetailsV2 { active_room_id: 8 });
+    slot_map.insert(255, SlotDetailsV2 { active_room_id: 1 });
     // slot_map.insert(255, SlotDetailsV1 { active_room_id: 1 });
     slot_map
 }
-
 
 pub fn init_memory_manager() {
     MEMORY_MANAGER.with(|m| {
@@ -112,10 +110,10 @@ fn get_store_id() -> StoreId {
 }
 
 #[ic_cdk::query]
-fn get_active_room_id() -> BTreeMap<u64, SlotDetailsV1> {
+fn get_active_room_id() -> BTreeMap<u64, SlotDetailsV2> {
     CANISTER_DATA.with(|canister_data_ref_cell| {
         let data = canister_data_ref_cell.borrow_mut();
-        data.test_container_field.clone()
+        data.test_container_field_1.clone()
     })
 }
 
