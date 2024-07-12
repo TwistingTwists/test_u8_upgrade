@@ -1,12 +1,10 @@
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ic_cdk::{post_upgrade, pre_upgrade, storage};
 use ic_cdk_macros::export_candid;
 // use ic_stable_structures::BTreeMap;
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::{
-    collections::BTreeMap,
-    time::SystemTime,
-};
+use std::{collections::BTreeMap, time::SystemTime};
 
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -23,14 +21,15 @@ thread_local! {
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 const SLOT_DETAILS_MEMORY: MemoryId = MemoryId::new(4);
+const UPGRADES: MemoryId = MemoryId::new(0);
 
-type StoreId = u8;
+type StoreId = u64;
 #[derive(candid::Deserialize, CandidType, serde::Serialize, Clone, Debug)]
 pub struct SlotDetailsV1 {
     pub active_room_id: StoreId,
 }
 
-#[derive(candid::Deserialize, serde::Serialize)]
+#[derive(candid::Deserialize, CandidType, serde::Serialize)]
 pub struct CanisterData {
     pub store_id: StoreId,
     pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
@@ -56,6 +55,10 @@ pub fn get_slot_details_memory() -> Memory {
     MEMORY_MANAGER.with(|m| m.borrow_mut().get(SLOT_DETAILS_MEMORY))
 }
 
+// pub fn get_upgrades_memory() -> Memory {
+//     MEMORY_MANAGER.with(|m| m.borrow_mut().get(UPGRADES))
+// }
+
 #[ic_cdk::query]
 fn greet(name: String) -> String {
     format!("Hello, {}!", name)
@@ -67,6 +70,17 @@ fn get_store_id() -> StoreId {
         let data = canister_data_ref_cell.borrow_mut();
         data.store_id
     })
+}
+
+#[pre_upgrade]
+fn pre_upgrade() {
+    CANISTER_DATA.with(|canister_data| storage::stable_save((canister_data,)).unwrap());
+}
+
+#[post_upgrade]
+fn post_upgrade() {
+    let (old_canister_data,): (CanisterData,) = storage::stable_restore().unwrap();
+    CANISTER_DATA.with(|canister_data| *canister_data.borrow_mut() = old_canister_data);
 }
 
 impl Storable for SlotDetailsV1 {
