@@ -106,12 +106,12 @@ pub fn get_upgrades_memory() -> Memory {
     MEMORY_MANAGER.with(|m| m.borrow_mut().get(UPGRADES))
 }
 
-#[ic_cdk::query]
+#[ic_cdk_macros::query]
 fn greet(name: String) -> String {
     format!("Hello, {}!", name)
 }
 
-#[ic_cdk::query]
+#[ic_cdk_macros::query]
 fn get_store_id() -> StoreId {
     CANISTER_DATA.with(|canister_data_ref_cell| {
         let data = canister_data_ref_cell.borrow_mut();
