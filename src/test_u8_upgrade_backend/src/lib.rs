@@ -1,10 +1,10 @@
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
-use ic_cdk::{post_upgrade, pre_upgrade, storage};
+use candid::{CandidType, Decode, Encode};
+// use ic_cdk::{post_upgrade, pre_upgrade, storage};
 use ic_cdk_macros::export_candid;
 // use ic_stable_structures::BTreeMap;
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::{collections::BTreeMap, time::SystemTime};
+use std::collections::BTreeMap;
 
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -26,16 +26,32 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 const SLOT_DETAILS_MEMORY: MemoryId = MemoryId::new(4);
 const UPGRADES: MemoryId = MemoryId::new(0);
 
-type StoreId = u64;
+type StoreId = u8;
 #[derive(candid::Deserialize, CandidType, serde::Serialize, Clone, Debug)]
 pub struct SlotDetailsV1 {
     pub active_room_id: StoreId,
+}
+
+#[derive(candid::Deserialize, CandidType, serde::Serialize, Clone, Debug)]
+#[serde(from = "SlotDetailsV1")]
+pub struct SlotDetailsV2 {
+    pub active_room_id: u64,
+}
+
+impl From<SlotDetailsV1> for SlotDetailsV2 {
+    fn from(value: SlotDetailsV1) -> Self {
+        Self {
+            active_room_id: value.active_room_id as u64,
+        }
+    }
 }
 
 #[derive(candid::Deserialize, CandidType, serde::Serialize)]
 pub struct CanisterData {
     pub store_id: StoreId,
     pub test_container_field: BTreeMap<u64, SlotDetailsV1>,
+    // #[serde(alias = "test_container_field")]
+    // pub test_container_field_1: BTreeMap<u64, SlotDetailsV2>,
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub store_map: ic_stable_structures::btreemap::BTreeMap<StoreId, SlotDetailsV1, Memory>,
 }
@@ -48,11 +64,25 @@ impl Default for CanisterData {
     fn default() -> Self {
         Self {
             store_id: 56,
-            test_container_field: BTreeMap::new(),
+            test_container_field: default_vals(),
+            // test_container_field_1: BTreeMap::new(),
             // store_map: _default_slot_details_map(),
         }
     }
 }
+
+pub fn default_vals() -> BTreeMap<u64, SlotDetailsV1> {
+    let mut slot_map: BTreeMap<u64, SlotDetailsV1> = BTreeMap::new();
+
+    // Adding some sample values
+    slot_map.insert(1, SlotDetailsV1 { active_room_id: 5 });
+    slot_map.insert(3, SlotDetailsV1 { active_room_id: 2 });
+    slot_map.insert(7, SlotDetailsV1 { active_room_id: 8 });
+    slot_map.insert(255, SlotDetailsV1 { active_room_id: 1 });
+    // slot_map.insert(255, SlotDetailsV1 { active_room_id: 1 });
+    slot_map
+}
+
 
 pub fn init_memory_manager() {
     MEMORY_MANAGER.with(|m| {
@@ -78,6 +108,14 @@ fn get_store_id() -> StoreId {
     CANISTER_DATA.with(|canister_data_ref_cell| {
         let data = canister_data_ref_cell.borrow_mut();
         data.store_id
+    })
+}
+
+#[ic_cdk::query]
+fn get_active_room_id() -> BTreeMap<u64, SlotDetailsV1> {
+    CANISTER_DATA.with(|canister_data_ref_cell| {
+        let data = canister_data_ref_cell.borrow_mut();
+        data.test_container_field.clone()
     })
 }
 
